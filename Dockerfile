@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:bullseye
 
 # Install devpi and dependencies
 COPY devpi-requirements.txt /
