@@ -1,4 +1,4 @@
-FROM python:bullseye
+FROM python:slim
 
 # Install devpi and dependencies
 COPY devpi-requirements.txt /
@@ -10,5 +10,5 @@ ENV DEVPI_SERVER_ROOT=/devpi
 # Add entrypoint
 COPY devpi-client /usr/local/bin/
 COPY entrypoint.sh /
-ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 EXPOSE 3141

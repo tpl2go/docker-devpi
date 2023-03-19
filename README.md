@@ -1,36 +1,67 @@
 Docker image for devpi
 ======================
+
 A ready to use Docker image for [devpi](http://doc.devpi.net/latest/). It includes
 the following plugins and components:
 
 * devpi-server, devpi-web and devpi-client
 * [devpi-findlinks](https://pypi.python.org/pypi/devpi-findlinks)
 * [devpi-cleaner](https://pypi.python.org/pypi/devpi-cleaner)
-* [devpi-slack](https://pypi.python.org/pypi/devpi-slack)
 * [devpi-lockdown](https://pypi.python.org/pypi/devpi-lockdown)
 * [devpi-json](https://pypi.org/project/devpi-json-info/)
 
-Starting the image
+Fork Modifications
 ------------------
-`devpi` needs its own folder to store packages and data, which you probably want
-to map a volume to. Additionally, map TCP port 3141.
+This repository is a fork of [LordGaav/docker-devpi](https://github.com/LordGaav/docker-devpi).
+
+Main Changes:
+* Smaller base image (python:slim)
+* No devpi-slack
+* Pulls latest devpi
+
+I have simplified the `entrypoint.sh` such that `devpi-server` runs as the main process instead of a background process in the container. 
+As such, there is no need to call special commands like `pgrep` to check if `devpi-server` is still alive. 
+Without the need for `pgrep`, we can use `python:slim`(200+ MB) as the base image instead of usual `python:latest`(900+ GB), saving over 75% in space.
+
+
+Building the image
+------------------
+On an internet connected computer, build the docker image using:
 
 ```bash
-docker run -d -p 3141:3141 -v /some/place:/devpi \
---name devpi-server lordgaav/devpi:latest
+docker build -t tpl2go/devpi:$(date '+%Y-%m-%d') .
+```
+
+Starting the image
+------------------
+Within the container,`devpi` stores its packages and data within `/devpi`.
+We can use a bind mount from `<devpi-vol-path>` to provision this persistent storage space within container.
+Additionally, we need to map port 3141 from within the container to whatever `external-port` you want the container to serve.
+
+```bash
+docker run -d -p <external-port>:3141 -v <devpi-vol-path>:/devpi \
+--name devpi-server tpl2go/devpi:<dateofimagebuild>
 ```
 
 The first time it runs, the startup script will generate a password for the root
-user and store it in `.root_password` in the volume.
+user and store it in `.root_password` in its storage volume.
 
 If you want to use the LDAP plugin, you need to map the YAML configuration file
 into the Docker and tell `devpi-server` to use it:
 
 ```bash
-docker run -d -p 3141:3141 -v /some/place:/devpi -v /path/to/ldap.yml:/ldap.yml \
---name devpi-server lordgaav/devpi:latest --ldap-config=/ldap.yml
+docker run -d -p <external-port>:3141 -v <devpi-vol-path>:/devpi -v /path/to/ldap.yml:/ldap.yml \
+--name devpi-server tpl2go/devpi:<dateofimagebuild> --ldap-config=/ldap.yml
 ```
 
+By default devpi-server has a 1GB package size limit. 
+To change this limit, add the arguments `--max-request-body-size <integer size>` to the docker run command.
+
+For example, to increase size limit to 5GB:
+```bash
+docker run -d -p <external-port>:3141 -v <devpi-vol-path>:/devpi \
+--name devpi-server tpl2go/devpi:<dateofimagebuild> --max-request-body-size 5000000000
+```
 
 devpi-client helper
 -------------------
