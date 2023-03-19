@@ -21,7 +21,8 @@ Main Changes:
 
 I have simplified the `entrypoint.sh` such that `devpi-server` runs as the main process instead of a background process in the container. 
 As such, there is no need to call special commands like `pgrep` to check if `devpi-server` is still alive. 
-Without the need for `pgrep`, we can use `python:slim`(200+ MB) as the base image instead of usual `python:latest`(900+ GB), saving over 75% in space.
+Without the need for `pgrep`, we can use `python:slim` as the base image instead of usual `python:latest`. 
+The final docker image size reduced from >1GB to 209MB, a space saving of about 80%.
 
 
 Building the image
@@ -32,11 +33,11 @@ On an internet connected computer, build the docker image using:
 docker build -t tpl2go/devpi:$(date '+%Y-%m-%d') .
 ```
 
-Starting the image
+Running the image
 ------------------
-Within the container,`devpi` stores its packages and data within `/devpi`.
-We can use a bind mount from `<devpi-vol-path>` to provision this persistent storage space within container.
-Additionally, we need to map port 3141 from within the container to whatever `external-port` you want the container to serve.
+Within the container,`devpi-server` stores its packages and data within the root directory `/devpi`.
+We can use a bind mount from `<devpi-vol-path>` to `/devpi` to provision this directory as a persistent storage space within container.
+Additionally, we need to map port 3141 from within the container to whatever `<external-port>` you want the container to serve.
 
 ```bash
 docker run -d -p <external-port>:3141 -v <devpi-vol-path>:/devpi \
